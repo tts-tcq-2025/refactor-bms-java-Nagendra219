@@ -2,6 +2,15 @@ package vitals;
 
 
 public abstract class VitalsChecker {
+
+    private static final float MIN_TEMPERATURE = 95.0f;
+    private static final float MAX_TEMPERATURE = 102.0f;
+
+    private static final float MIN_PULSE_RATE = 60.0f;
+    private static final float MAX_PULSE_RATE = 100.0f;
+
+    private static final float MIN_SPO2 = 90.0f;
+
     static boolean vitalsOk(float temperature, float pulseRate, float spo2) throws InterruptedException {
         String errorMessage = checkVitals(temperature, pulseRate, spo2);
         if (null != errorMessage) {
@@ -10,29 +19,32 @@ public abstract class VitalsChecker {
         return true;
     }
 
-    private static String checkVitals(float temperature, float pulseRate, float spo2) {
+    public static String checkVitals(float temperature, float pulseRate, float spo2) {
+        StringBuilder alerts = new StringBuilder();
+
         if (!isTemperatureNormal(temperature)) {
-            return "Temperature is critical!";
+            alerts.append("Temperature is out of range (").append(temperature).append(" °F). ");
         }
         if (!isPulseRateNormal(pulseRate)) {
-            return "Pulse Rate is out of range!";
+            alerts.append("Pulse rate is out of range (").append(pulseRate).append(" bpm). ");
         }
         if (!isSpo2Normal(spo2)) {
-            return "Oxygen Saturation out of range!";
+            alerts.append("Oxygen saturation is too low (").append(spo2).append("%). ");
         }
-        return null;
+
+        return alerts.length() > 0 ? alerts.toString().trim() : "All vitals are within normal range.";
     }
 
     private static boolean isTemperatureNormal(float temperature) {
-        return temperature >= 95 && temperature <= 102;
+        return temperature >= MIN_TEMPERATURE && temperature <= MAX_TEMPERATURE;
     }
 
     private static boolean isPulseRateNormal(float pulseRate) {
-        return pulseRate >= 60 && pulseRate <= 100;
+        return pulseRate >= MIN_PULSE_RATE && pulseRate <= MAX_PULSE_RATE;
     }
 
     private static boolean isSpo2Normal(float spo2) {
-        return spo2 >= 90;
+        return spo2 >= MIN_SPO2;
     }
 
     private static void displayAlertAnimation() throws InterruptedException {
