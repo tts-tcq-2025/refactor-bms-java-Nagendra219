@@ -3,62 +3,70 @@ package vitals;
 
 public abstract class VitalsChecker {
 
-    private static final float MIN_TEMPERATURE = 95.0f;
-    private static final float MAX_TEMPERATURE = 102.0f;
+    private enum VitalType {
+        TEMPERATURE("Temperature", 95.0f, 102.0f, "°F"),
+        PULSE_RATE("Pulse rate", 60.0f, 100.0f, "bpm"),
+        SPO2("Oxygen saturation", 90.0f, Float.MAX_VALUE, "%");
 
-    private static final float MIN_PULSE_RATE = 60.0f;
-    private static final float MAX_PULSE_RATE = 100.0f;
+        final String name;
+        final float min;
+        final float max;
+        final String unit;
 
-    private static final float MIN_SPO2 = 90.0f;
-
-    static boolean vitalsOk(float temperature, float pulseRate, float spo2) throws InterruptedException {
-        String errorMessage = checkVitals(temperature, pulseRate, spo2);
-        if (null != errorMessage) {
-            return handleError(errorMessage);
+        VitalType(String name, float min, float max, String unit) {
+            this.name = name;
+            this.min = min;
+            this.max = max;
+            this.unit = unit;
         }
+
+        boolean isNormal(float value) {
+            return value >= min && value <= max;
+        }
+
+        String getAlert(float value) {
+            return name + " out of range (" + value + " " + unit + ").";
+        }
+    }
+
+    public static boolean vitalsOk(float temperature, float pulseRate, float spo2) {
+        StringBuilder alerts = new StringBuilder();
+
+        checkAndAppendAlert(VitalType.TEMPERATURE, temperature, alerts);
+        checkAndAppendAlert(VitalType.PULSE_RATE, pulseRate, alerts);
+        checkAndAppendAlert(VitalType.SPO2, spo2, alerts);
+
+        if (alerts.length() > 0) {
+            handleAlert(alerts.toString().trim());
+            return false;
+        }
+
         return true;
     }
 
-    public static String checkVitals(float temperature, float pulseRate, float spo2) {
-        StringBuilder alerts = new StringBuilder();
-
-        if (!isTemperatureNormal(temperature)) {
-            alerts.append("Temperature is out of range (").append(temperature).append(" °F). ");
-        }
-        if (!isPulseRateNormal(pulseRate)) {
-            alerts.append("Pulse rate is out of range (").append(pulseRate).append(" bpm). ");
-        }
-        if (!isSpo2Normal(spo2)) {
-            alerts.append("Oxygen saturation is too low (").append(spo2).append("%). ");
-        }
-
-        return alerts.length() > 0 ? alerts.toString().trim() : "All vitals are within normal range.";
-    }
-
-    private static boolean isTemperatureNormal(float temperature) {
-        return temperature >= MIN_TEMPERATURE && temperature <= MAX_TEMPERATURE;
-    }
-
-    private static boolean isPulseRateNormal(float pulseRate) {
-        return pulseRate >= MIN_PULSE_RATE && pulseRate <= MAX_PULSE_RATE;
-    }
-
-    private static boolean isSpo2Normal(float spo2) {
-        return spo2 >= MIN_SPO2;
-    }
-
-    private static void displayAlertAnimation() throws InterruptedException {
-        for (int i = 0; i < 6; i++) {
-            System.out.print("\r* ");
-            Thread.sleep(1000);
-            System.out.print("\r *");
-            Thread.sleep(1000);
+    private static void checkAndAppendAlert(VitalType type, float value, StringBuilder alerts) {
+        if (!type.isNormal(value)) {
+            alerts.append(type.getAlert(value)).append(" ");
         }
     }
 
-    private static boolean handleError(String message) throws InterruptedException {
-        System.out.println(message);
+    private static void handleAlert(String message) {
+        System.out.println("ALERT: " + message);
         displayAlertAnimation();
-        return false;
+    }
+
+    private static void displayAlertAnimation() {
+        try {
+            for (int i = 0; i < 6; i++) {
+                System.out.print("\r* ");
+                Thread.sleep(1000);
+                System.out.print("\r *");
+                Thread.sleep(1000);
+            }
+            System.out.println(); // newline after animation
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Alert animation interrupted.");
+        }
     }
 }
