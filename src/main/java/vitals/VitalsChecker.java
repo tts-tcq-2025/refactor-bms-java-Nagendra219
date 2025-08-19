@@ -1,58 +1,40 @@
 package vitals;
+import java.util.ArrayList;
+import java.util.List;
+import Vital;
 
 
 public abstract class VitalsChecker {
 
-    private enum VitalType {
-        TEMPERATURE("Temperature", 95.0f, 102.0f, "°F"),
-        PULSE_RATE("Pulse rate", 60.0f, 100.0f, "bpm"),
-        SPO2("Oxygen saturation", 90.0f, Float.MAX_VALUE, "%");
-
-        final String name;
-        final float min;
-        final float max;
-        final String unit;
-
-        VitalType(String name, float min, float max, String unit) {
-            this.name = name;
-            this.min = min;
-            this.max = max;
-            this.unit = unit;
-        }
-
-        boolean isNormal(float value) {
-            return value >= min && value <= max;
-        }
-
-        String getAlert(float value) {
-            return name + " out of range (" + value + " " + unit + ").";
-        }
-    }
+  private static final Vital TEMPERATURE = new Vital("Temperature", 95.0f, 102.0f, "°F");
+    private static final Vital PULSE_RATE = new Vital("Pulse rate", 60.0f, 100.0f, "bpm");
+    private static final Vital SPO2 = new Vital("Oxygen saturation", 90.0f, Float.MAX_VALUE, "%");
 
     public static boolean vitalsOk(float temperature, float pulseRate, float spo2) {
-        StringBuilder alerts = new StringBuilder();
+        List<String> alerts = checkVitals(temperature, pulseRate, spo2);
 
-        checkAndAppendAlert(VitalType.TEMPERATURE, temperature, alerts);
-        checkAndAppendAlert(VitalType.PULSE_RATE, pulseRate, alerts);
-        checkAndAppendAlert(VitalType.SPO2, spo2, alerts);
-
-        if (alerts.length() > 0) {
-            handleAlert(alerts.toString().trim());
+        if (!alerts.isEmpty()) {
+            alerts.forEach(System.out::println);
+            displayAlertAnimation();
             return false;
         }
-
         return true;
     }
 
-    private static void checkAndAppendAlert(VitalType type, float value, StringBuilder alerts) {
-        if (!type.isNormal(value)) {
-            alerts.append(type.getAlert(value)).append(" ");
-        }
+    public static List<String> checkVitals(float temperature, float pulseRate, float spo2) {
+        List<String> alerts = new ArrayList<>();
+
+        checkAndAddAlert(TEMPERATURE, temperature, alerts);
+        checkAndAddAlert(PULSE_RATE, pulseRate, alerts);
+        checkAndAddAlert(SPO2, spo2, alerts);
+
+        return alerts;
     }
 
-    private static void handleAlert(String message) {
-        System.out.println("ALERT: " + message);
-        displayAlertAnimation();
+    private static void checkAndAddAlert(Vital vital, float value, List<String> alerts) {
+        if (!vital.isNormal(value)) {
+            alerts.add(vital.getAlert(value));
+        }
     }
 
     private static void displayAlertAnimation() {
@@ -63,7 +45,7 @@ public abstract class VitalsChecker {
                 System.out.print("\r *");
                 Thread.sleep(1000);
             }
-            System.out.println(); // newline after animation
+            System.out.println();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.err.println("Alert animation interrupted.");
