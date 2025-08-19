@@ -1,3 +1,4 @@
+package vitals;
 
 private static class Vital {
          private final String messageKey;
